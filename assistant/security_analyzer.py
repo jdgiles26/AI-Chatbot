@@ -23,7 +23,7 @@ class SecurityAnalyzer:
                 'description': 'Overly permissive file permissions detected'
             },
             'suspicious_extensions': {
-                'patterns': ['.sh', '.command', '.pkg', '.dmg', '.app'],
+                'patterns': ['.sh', '.command', '.pkg', '.dmg'],
                 'severity': 'medium',
                 'description': 'Executable or package file detected'
             },
@@ -164,15 +164,19 @@ class SecurityAnalyzer:
                 ]
             })
         
-        # Check for executables owned by root
-        if file_info.get('is_executable') and file_info.get('owner_uid') == 0:
+        # Check for executables owned by root in non-system locations
+        path = file_info.get('path', '')
+        system_paths = ['/bin/', '/sbin/', '/usr/bin/', '/usr/sbin/', '/System/', '/Library/']
+        if (file_info.get('is_executable') and 
+            file_info.get('owner_uid') == 0 and
+            not any(sys_path in path for sys_path in system_paths)):
             findings.append({
                 'type': 'root_executable',
                 'severity': 'medium',
                 'path': file_info.get('path'),
-                'description': 'Executable file owned by root - verify legitimacy',
+                'description': 'Executable file owned by root in non-system location - verify legitimacy',
                 'details': file_info,
-                'mitigation': 'Verify this is a legitimate system executable. Check with: ls -la',
+                'mitigation': 'Verify this is a legitimate executable. Check with: ls -la',
                 'references': [
                     'https://support.apple.com/guide/terminal/about-user-and-group-permissions-apd67e92c11/mac'
                 ]

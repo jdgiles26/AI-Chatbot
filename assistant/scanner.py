@@ -7,6 +7,7 @@ import os
 import stat
 import hashlib
 import time
+import subprocess
 from pathlib import Path
 from datetime import datetime
 from typing import Dict, List, Callable, Optional
@@ -32,14 +33,15 @@ class FileSystemScanner:
         if platform.system() != 'Darwin':
             return False
         try:
-            import subprocess
             result = subprocess.run(
                 ['sysctl', '-n', 'machdep.cpu.brand_string'],
                 capture_output=True,
-                text=True
+                text=True,
+                timeout=5
             )
             return 'Apple M2' in result.stdout or 'Apple M1' in result.stdout
-        except:
+        except (subprocess.SubprocessError, FileNotFoundError, OSError) as e:
+            # If we can't determine the chip type, assume it's not M2
             return False
     
     def scan(self, path: str, recursive: bool = True, follow_symlinks: bool = False) -> Dict:
@@ -216,8 +218,14 @@ class FileSystemScanner:
         """Check if a file appears suspicious."""
         suspicious_indicators = []
         
-        # Check for suspicious extensions
-        suspicious_extensions = ['.sh', '.command', '.app', '.pkg', '.dmg', '.exe']
+        # Check for suspicious extensions (excluding .app in common app directories)
+        path = file_info.get('path', '')
+        suspicious_extensions = ['.sh', '.command', '.pkg', '.dmg', '.exe']
+        
+        # Add .app only if not in Applications or system directories
+        if not any(app_dir in path for app_dir in ['/Applications/', '/System/Applications/']):
+            suspicious_extensions.append('.app')
+        
         if file_info.get('extension') in suspicious_extensions:
             suspicious_indicators.append('suspicious_extension')
         
@@ -230,8 +238,11 @@ class FileSystemScanner:
         if file_info.get('name', '').startswith('.') and file_info.get('is_executable'):
             suspicious_indicators.append('hidden_executable')
         
-        # Check for SUID/SGID files
-        if file_info.get('is_executable') and file_info.get('owner_uid') == 0:
+        # Check for root-owned executables only in non-system locations
+        system_paths = ['/bin/', '/sbin/', '/usr/bin/', '/usr/sbin/', '/System/', '/Library/']
+        if (file_info.get('is_executable') and 
+            file_info.get('owner_uid') == 0 and
+            not any(sys_path in path for sys_path in system_paths)):
             suspicious_indicators.append('root_owned_executable')
         
         return len(suspicious_indicators) > 0

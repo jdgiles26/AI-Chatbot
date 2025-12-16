@@ -54,7 +54,11 @@ class AssistantCLI:
         # Display summary
         self._display_summary(analysis_results)
         
-        return analysis_results
+        # Return both scan and analysis results
+        return {
+            'scan_results': scan_results,
+            'analysis_results': analysis_results
+        }
     
     def monitor(self, args):
         """Start continuous monitoring of file system."""
@@ -204,10 +208,7 @@ Examples:
     if args.command == 'scan':
         result = cli.scan(args)
         # Store for potential report generation
-        cli.last_scan = {
-            'scan_results': result.get('scan_results', {}),
-            'analysis_results': result
-        }
+        cli.last_scan = result
     elif args.command == 'monitor':
         cli.monitor(args)
     elif args.command == 'report':

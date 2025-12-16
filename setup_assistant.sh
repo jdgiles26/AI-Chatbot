@@ -29,7 +29,7 @@ echo ""
 echo "Installing dependencies..."
 
 # Install Python dependencies if requirements.txt has actual packages
-if grep -v '^#' assistant/requirements.txt | grep -v '^$' | grep -q '[^[:space:]]'; then
+if [ -s assistant/requirements.txt ] && grep -qv '^[[:space:]]*#' assistant/requirements.txt; then
     pip3 install -r assistant/requirements.txt
     if [ $? -eq 0 ]; then
         echo "✓ Dependencies installed successfully"
