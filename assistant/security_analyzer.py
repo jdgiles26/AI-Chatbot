@@ -7,6 +7,11 @@ import re
 from typing import Dict, List
 from pathlib import Path
 
+try:
+    from .constants import SYSTEM_PATHS
+except ImportError:
+    from constants import SYSTEM_PATHS
+
 
 class SecurityAnalyzer:
     """Analyzes file system data for security vulnerabilities and risks."""
@@ -166,10 +171,9 @@ class SecurityAnalyzer:
         
         # Check for executables owned by root in non-system locations
         path = file_info.get('path', '')
-        system_paths = ['/bin/', '/sbin/', '/usr/bin/', '/usr/sbin/', '/System/', '/Library/']
         if (file_info.get('is_executable') and 
             file_info.get('owner_uid') == 0 and
-            not any(sys_path in path for sys_path in system_paths)):
+            not any(sys_path in path for sys_path in SYSTEM_PATHS)):
             findings.append({
                 'type': 'root_executable',
                 'severity': 'medium',

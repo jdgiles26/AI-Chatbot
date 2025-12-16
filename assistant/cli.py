@@ -30,7 +30,7 @@ class AssistantCLI:
         # Scan the file system
         scan_results = self.scanner.scan(
             path=args.path,
-            recursive=args.recursive,
+            recursive=not args.no_recursive,
             follow_symlinks=args.follow_symlinks
         )
         
@@ -150,7 +150,7 @@ def main():
         epilog="""
 Examples:
   # Scan a directory
-  %(prog)s scan --path /Users --recursive
+  %(prog)s scan --path /Users
   
   # Generate a report
   %(prog)s report --output security_report.json
@@ -160,6 +160,9 @@ Examples:
   
   # Scan and save detailed report
   %(prog)s scan --path /Applications --output scan_report.html --format html
+  
+  # Scan non-recursively
+  %(prog)s scan --path /Users/username/Downloads --no-recursive
         """
     )
     
@@ -169,8 +172,8 @@ Examples:
     scan_parser = subparsers.add_parser('scan', help='Perform security scan')
     scan_parser.add_argument('--path', type=str, default='/', 
                             help='Path to scan (default: /)')
-    scan_parser.add_argument('--recursive', action='store_true', default=True,
-                            help='Scan recursively (default: True)')
+    scan_parser.add_argument('--no-recursive', action='store_true',
+                            help='Disable recursive scanning (default: recursive enabled)')
     scan_parser.add_argument('--follow-symlinks', action='store_true',
                             help='Follow symbolic links')
     scan_parser.add_argument('--output', type=str,

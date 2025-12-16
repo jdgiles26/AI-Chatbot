@@ -223,6 +223,7 @@ codesign -v /Applications/AppName.app
 crontab -e
 
 # Add this line for weekly Sunday scans at 2 AM
+# Note: The percent signs must be escaped with backslash in crontab
 0 2 * * 0 /usr/bin/python3 /path/to/AI-Chatbot/assistant/cli.py scan --path /Users --output /path/to/reports/weekly_$(date +\%Y\%m\%d).json
 ```
 

@@ -13,12 +13,17 @@ from datetime import datetime
 from typing import Dict, List, Callable, Optional
 import platform
 
+try:
+    from .constants import SYSTEM_PATHS
+except ImportError:
+    from constants import SYSTEM_PATHS
+
 
 class FileSystemScanner:
     """Scans file system and collects metadata for security analysis."""
     
     def __init__(self):
-        self.is_mac_m2 = self._check_mac_m2()
+        self.is_apple_silicon = self._check_apple_silicon()
         self.excluded_paths = {
             '/System/Volumes',
             '/private/var/vm',
@@ -28,8 +33,8 @@ class FileSystemScanner:
             '/proc'
         }
         
-    def _check_mac_m2(self) -> bool:
-        """Check if running on Mac M2 chip."""
+    def _check_apple_silicon(self) -> bool:
+        """Check if running on Apple Silicon (M1/M2/M3) chip."""
         if platform.system() != 'Darwin':
             return False
         try:
@@ -41,7 +46,7 @@ class FileSystemScanner:
             )
             return 'Apple M2' in result.stdout or 'Apple M1' in result.stdout
         except (subprocess.SubprocessError, FileNotFoundError, OSError) as e:
-            # If we can't determine the chip type, assume it's not M2
+            # If we can't determine the chip type, assume it's not Apple Silicon
             return False
     
     def scan(self, path: str, recursive: bool = True, follow_symlinks: bool = False) -> Dict:
@@ -61,7 +66,7 @@ class FileSystemScanner:
             'scan_time': datetime.now().isoformat(),
             'start_path': path,
             'platform': platform.platform(),
-            'is_mac_m2': self.is_mac_m2,
+            'is_apple_silicon': self.is_apple_silicon,
             'files': [],
             'directories': [],
             'symlinks': [],
@@ -211,7 +216,7 @@ class FileSystemScanner:
                 for byte_block in iter(lambda: f.read(4096), b""):
                     sha256_hash.update(byte_block)
             return sha256_hash.hexdigest()
-        except:
+        except (IOError, OSError, PermissionError):
             return None
     
     def _is_suspicious(self, file_info: Dict) -> bool:
@@ -239,10 +244,9 @@ class FileSystemScanner:
             suspicious_indicators.append('hidden_executable')
         
         # Check for root-owned executables only in non-system locations
-        system_paths = ['/bin/', '/sbin/', '/usr/bin/', '/usr/sbin/', '/System/', '/Library/']
         if (file_info.get('is_executable') and 
             file_info.get('owner_uid') == 0 and
-            not any(sys_path in path for sys_path in system_paths)):
+            not any(sys_path in path for sys_path in SYSTEM_PATHS)):
             suspicious_indicators.append('root_owned_executable')
         
         return len(suspicious_indicators) > 0
