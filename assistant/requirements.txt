@@ -1,0 +1,9 @@
+# Mac Mini M2 Security Assistant Requirements
+# Core dependencies for file system scanning and security analysis
+
+# No external dependencies required - uses Python standard library
+# The assistant is designed to work with minimal dependencies for security
+
+# Optional dependencies for enhanced functionality:
+# psutil>=5.9.0  # For advanced system monitoring (optional)
+# watchdog>=3.0.0  # For real-time file system monitoring (optional)

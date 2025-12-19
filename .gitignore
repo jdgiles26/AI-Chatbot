@@ -50,3 +50,6 @@ env/
 # Environment variables
 .env
 .env.local
+
+# Test directories
+test_security/
